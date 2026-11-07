@@ -8,12 +8,13 @@ import {
   type Product,
   type Seller,
   approvedPublicContact,
+  normalizeWhatsAppNumber,
 } from "./catalog-model";
 
-// Explicit public projection: no buyer data, contact details, WhatsApp JIDs,
+// Explicit public projection: approved seller contact only; no buyer data or WhatsApp JIDs,
 // wholesale pricing, language settings, or privileged credentials.
 const PRODUCT_FIELDS =
-  "id,seller_id,product_name,retail_price,price_numeric,quantity,description,category,image_urls,created_at,status,sellers(id,store_name)";
+  "id,seller_id,product_name,retail_price,price_numeric,quantity,description,category,image_urls,created_at,status,sellers(id,store_name,contact_number)";
 export const fixtureMode = () => process.env.MUNSHI_CATALOG_FIXTURES === "1";
 
 function client() {
@@ -28,16 +29,16 @@ function client() {
 type Row = Record<string, unknown>;
 function sellerFromRow(row: Row | null): Seller | null {
   if (!row || typeof row.id !== "string" || !isPublicId(row.id)) return null;
+  // The owner confirmed contact_number is intended for public customer inquiries.
+  // Fixture contacts remain development-only. Never use whatsapp_number or a JID.
+  const contact = fixtureMode()
+    ? process.env.NODE_ENV === "development"
+      ? approvedPublicContact(row)
+      : null
+    : normalizeWhatsAppNumber(row.contact_number);
   return {
     id: row.id,
-    // The existing live projection has no approved public-contact contract.
-    // Development fixtures exercise the explicit opt-in contract, without publishing
-    // contact_number or internal WhatsApp IDs. Wire a verified live source here later.
-    ...(process.env.NODE_ENV === "development" &&
-    fixtureMode() &&
-    approvedPublicContact(row)
-      ? { public_whatsapp_number: approvedPublicContact(row)! }
-      : {}),
+    ...(contact ? { public_whatsapp_number: contact } : {}),
     store_name:
       typeof row.store_name === "string" && row.store_name.trim()
         ? row.store_name.trim()
@@ -167,7 +168,7 @@ export const getSeller = cache(
       }
       const { data, error } = await client()
         .from("sellers")
-        .select("id,store_name")
+        .select("id,store_name,contact_number")
         .eq("id", id)
         .abortSignal(AbortSignal.timeout(8000))
         .maybeSingle();

@@ -8,6 +8,30 @@ const modelUrl = url(
   await readFile(new URL("../lib/catalog-model.ts", import.meta.url), "utf8"),
 );
 const model = await import(modelUrl);
+const catalogSource = (await readFile(new URL("../lib/catalog.ts", import.meta.url), "utf8"))
+  .replace('import "server-only";', "")
+  .replace('import { createClient } from "@supabase/supabase-js";', 'const createClient = () => { throw new Error("Unexpected network request"); };')
+  .replace('import { cache } from "react";', 'const cache = (fn) => fn;')
+  .replace('"./catalog-model"', JSON.stringify(modelUrl));
+const catalogAdapter = await import(url(`${catalogSource}\nexport { sellerFromRow };`));
+
+test("live seller contact adapter publishes only normalized approved contact_number", () => {
+  const previous = process.env.MUNSHI_CATALOG_FIXTURES;
+  delete process.env.MUNSHI_CATALOG_FIXTURES;
+  try {
+    const row = { id: "10000000-0000-4000-8000-000000000001", store_name: "Shop", contact_number: "+92 (300) 123-4567", whatsapp_number: "private@lid" };
+    const seller = catalogAdapter.sellerFromRow(row);
+    assert.equal(seller.public_whatsapp_number, "923001234567");
+    assert.equal("contact_number" in seller, false);
+    assert.equal("whatsapp_number" in seller, false);
+    for (const contact_number of [null, "", "03001234567", "12345@lid", "invalid"]) {
+      assert.equal(catalogAdapter.sellerFromRow({ ...row, contact_number }).public_whatsapp_number, undefined);
+    }
+  } finally {
+    if (previous === undefined) delete process.env.MUNSHI_CATALOG_FIXTURES;
+    else process.env.MUNSHI_CATALOG_FIXTURES = previous;
+  }
+});
 const shoppingUrl = url(
   (
     await readFile(new URL("../lib/shopping.ts", import.meta.url), "utf8")
