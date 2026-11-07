@@ -1,43 +1,55 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./context/CartContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 import WhatsAppButton from "./components/WhatsAppButton";
+import { fixtureMode } from "../lib/catalog";
+import { WHATSAPP_NUMBER } from "../lib/brand";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Munshi — Your WhatsApp Marketplace",
+  title: {
+    default: "Munshi Mart — Good finds. Local stores.",
+    template: "%s | Munshi Mart",
+  },
   description:
-    "Shop from thousands of Pakistani sellers. List products effortlessly via WhatsApp voice messages. Munshi connects buyers and sellers across Pakistan.",
-  keywords: ["munshi", "whatsapp marketplace", "pakistan shopping", "online store pakistan", "sell on whatsapp"],
-  authors: [{ name: "Munshi" }],
+    "Discover products from independent Pakistani stores. Browse the marketplace or start selling through WhatsApp.",
+  icons: { icon: "/brand-mark.svg" },
   openGraph: {
-    title: "Munshi — Your WhatsApp Marketplace",
-    description: "Shop from thousands of Pakistani sellers. List products via WhatsApp.",
-    type: "website",
+    title: "Munshi Mart",
+    description: "Good finds. Local stores.",
     locale: "en_PK",
+    type: "website",
   },
 };
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en">
       <body>
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
+        {fixtureMode() && (
+          <div className="fixture-banner" role="status">
+            LOCAL DEMO · Fixture catalog for visual verification. These items
+            are not for sale.
+          </div>
+        )}
         <CartProvider>
           <Navbar />
-          <main>{children}</main>
+          <main id="main-content">{children}</main>
           <Footer />
           <CartDrawer />
-          <WhatsAppButton phoneNumber="923460392313" />
+          <WhatsAppButton
+            phoneNumber={WHATSAPP_NUMBER}
+            message="Hi! I need help with Munshi Mart."
+          />
         </CartProvider>
       </body>
     </html>

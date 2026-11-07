@@ -1,139 +1,119 @@
-'use client';
+import Link from "next/link";
+import {
+  categoryOptions,
+  filterProducts,
+  firstParam,
+  SORT_OPTIONS,
+  type Product,
+  type SearchParams,
+} from "../../lib/catalog-model";
+import ProductGrid from "../components/ProductGrid";
+import CategoryBar from "../components/CategoryBar";
+import CatalogError from "../components/CatalogError";
+import Icon from "../components/Icon";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { supabase } from '../../lib/supabase';
-import ProductGrid from '../components/ProductGrid';
-import LoadingSkeleton from '../components/LoadingSkeleton';
-import CategoryBar from '../components/CategoryBar';
-import SearchBar from '../components/SearchBar';
-import { Product } from '../components/ProductCard';
-
-const KNOWN_CATEGORIES = [
-  'Fashion', 'Electronics', 'Home & Living', 'Groceries',
-  'Beauty', 'Toys', 'Sports', 'Books',
-];
-
-const SORT_OPTIONS = [
-  { label: 'Newest First', value: 'created_at:desc' },
-  { label: 'Price: Low to High', value: 'retail_price:asc' },
-  { label: 'Price: High to Low', value: 'retail_price:desc' },
-];
-
-export default function ProductsContent() {
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams.get('search') || '';
-  const categoryParam = searchParams.get('category') || '';
-
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState(categoryParam);
-  const [sort, setSort] = useState('created_at:desc');
-
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    let query = supabase
-      .from('products')
-      .select('*, sellers(store_name, whatsapp_number)');
-
-    if (searchQuery) {
-      query = query.ilike('product_name', `%${searchQuery}%`);
-    }
-    if (category) {
-      query = query.ilike('category', `%${category}%`);
-    }
-
-    const [col, dir] = sort.split(':');
-    query = query.order(col, { ascending: dir === 'asc' });
-
-    const { data, error } = await query;
-    if (!error && data) setProducts(data as Product[]);
-    setLoading(false);
-  }, [searchQuery, category, sort]);
-
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
-  useEffect(() => { setCategory(categoryParam); }, [categoryParam]);
-
+export default function ProductsContent({
+  products,
+  params,
+  basePath = "/products",
+  error,
+  store = false,
+}: {
+  products: Product[];
+  params: SearchParams;
+  basePath?: string;
+  error: string | null;
+  store?: boolean;
+}) {
+  const search = firstParam(params.search);
+  const category = firstParam(params.category);
+  const rawSort = firstParam(params.sort);
+  const sort =
+    rawSort === "retail_price:asc"
+      ? "price-asc"
+      : rawSort === "retail_price:desc"
+        ? "price-desc"
+        : SORT_OPTIONS.some((s) => s.value === rawSort)
+          ? rawSort
+          : "newest";
+  const filtered = filterProducts(products, { search, category, sort });
+  const categories = categoryOptions(products);
+  // Native GET form keeps the complete view shareable and works before hydration.
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      {/* Page Header */}
-      <div style={{
-        background: 'white',
-        borderBottom: '1px solid var(--border)',
-        padding: 'var(--space-8) var(--space-4) var(--space-5)',
-      }}>
-        <div className="container">
-          <div style={{ marginBottom: 'var(--space-5)' }}>
-            <h1 style={{ fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: 6 }}>
-              {searchQuery ? `Results for "${searchQuery}"` : category ? `${category} Products` : 'All Products'}
-            </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-              {loading ? 'Loading...' : `${products.length} product${products.length !== 1 ? 's' : ''} found`}
-            </p>
-          </div>
-
-          {/* Search */}
-          <div style={{ maxWidth: 480, marginBottom: 'var(--space-5)' }}>
-            <SearchBar initialValue={searchQuery} />
-          </div>
-
-          {/* Category filter */}
-          <CategoryBar
-            categories={KNOWN_CATEGORIES}
-            selected={category}
-            onSelect={setCategory}
-          />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="container" style={{ padding: 'var(--space-8) var(--space-4)' }}>
-        {/* Sort + count bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 'var(--space-6)', flexWrap: 'wrap', gap: 'var(--space-3)',
-        }}>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-            {!loading && `Showing ${products.length} products`}
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>Sort:</span>
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-              id="products-sort-select"
-              style={{
-                padding: '7px 12px',
-                borderRadius: 'var(--radius)',
-                border: '1.5px solid var(--border)',
-                fontSize: 13,
-                fontFamily: 'var(--font-sans)',
-                color: 'var(--text)',
-                background: 'white',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {loading ? <LoadingSkeleton count={8} /> : (
-          <ProductGrid
-            products={products}
-            emptyMessage={
-              searchQuery
-                ? `No products matching "${searchQuery}". Try a different keyword.`
-                : category
-                ? `No products in "${category}" yet — add yours via WhatsApp!`
-                : 'No products listed yet — be the first!'
+    <section className="catalog-section container">
+      <form action={basePath} method="get" className="catalog-controls">
+        <div className="catalog-search">
+          <Icon name="search" size={19} />
+          <input
+            name="search"
+            type="search"
+            aria-label={store ? "Search this store" : "Search products"}
+            placeholder={
+              store
+                ? "Find something in this store…"
+                : "Find your next good thing…"
             }
+            defaultValue={search}
+            key={search}
           />
+        </div>
+        <label className="filter-label">
+          Category
+          <select name="category" defaultValue={category} key={category}>
+            <option value="">All products</option>
+            {[...new Set([...categories, ...(category ? [category] : [])])].map(
+              (c) => (
+                <option key={c}>{c}</option>
+              ),
+            )}
+          </select>
+        </label>
+        <label className="filter-label">
+          Sort by
+          <select name="sort" defaultValue={sort} key={sort}>
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="btn btn-primary" type="submit">
+          Apply <Icon name="arrow" size={16} />
+        </button>
+      </form>
+      <CategoryBar
+        categories={categories}
+        selected={category}
+        basePath={basePath}
+        search={search}
+        sort={sort}
+      />
+      <div className="catalog-count">
+        <p role="status">
+          {error
+            ? "Catalog temporarily unavailable"
+            : `${filtered.length} ${filtered.length === 1 ? "product" : "products"}${search ? ` for “${search}”` : ""}${category ? ` in ${category}` : ""}`}
+        </p>
+        {(search || category || sort !== "newest") && (
+          <Link href={basePath}>Clear filters ×</Link>
         )}
       </div>
-    </div>
+      {error ? (
+        <CatalogError message={error} retryHref={basePath} />
+      ) : (
+        <ProductGrid
+          products={filtered}
+          resetHref={basePath}
+          emptyMessage={
+            search || category
+              ? "No matches this time. Try another search or clear your filters."
+              : store
+                ? "This store has no active listings yet. Come back soon or explore the marketplace."
+                : "The shelves are getting ready. Check back soon for new listings."
+          }
+        />
+      )}
+    </section>
   );
 }
