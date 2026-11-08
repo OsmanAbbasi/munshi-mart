@@ -1015,12 +1015,21 @@ try {
         `document.querySelector('.seller-badge').getAttribute('href') === '/seller/${sellerA}'`,
       ),
     );
-    check(
-      "live seller contact remains unavailable without an approved public source",
-      await evaluate(
-        `!document.querySelector('[data-seller-chat]') && !!document.querySelector('.contact-unavailable') && !!document.querySelector('.platform-support')`,
-      ),
-    );
+    const publicContact = product.sellers?.contact_number;
+    const contactDigits = typeof publicContact === 'string' && /^[+\d\s().-]+$/.test(publicContact.trim())
+      ? publicContact.trim().replace(/[\s().-]/g, '').replace(/^00/, '').replace(/^\+/, '') : '';
+    if (/^[1-9]\d{7,14}$/.test(contactDigits)) {
+      check(
+        'live seller chat uses the approved public contact',
+        await evaluate(`document.querySelector('[data-seller-chat]')?.href.startsWith('https://wa.me/${contactDigits}?') === true`),
+      );
+    } else {
+      check(
+        'live missing or invalid public contact remains unavailable',
+        await evaluate(`!document.querySelector('[data-seller-chat]') && !!document.querySelector('.contact-unavailable')`),
+      );
+    }
+    check('live platform support stays separate from seller contact', await evaluate(`!!document.querySelector('.platform-support')`));
     check("live no browser runtime exceptions", exceptions.length === 0);
     await writeFile(
       path.join(out, "live-browser-results.json"),

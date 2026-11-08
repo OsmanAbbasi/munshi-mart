@@ -8,7 +8,7 @@ const client = createClient(
   { auth: { persistSession: false } },
 );
 const projection =
-  "id,seller_id,product_name,retail_price,price_numeric,quantity,description,category,image_urls,created_at,status,sellers(id,store_name)";
+  "id,seller_id,product_name,retail_price,price_numeric,quantity,description,category,image_urls,created_at,status,sellers(id,store_name,contact_number)";
 const [products, sellers, statuses] = await Promise.all([
   client
     .from("products")
@@ -18,7 +18,7 @@ const [products, sellers, statuses] = await Promise.all([
     .abortSignal(AbortSignal.timeout(20000)),
   client
     .from("sellers")
-    .select("id,store_name")
+    .select("id,store_name,contact_number")
     .limit(10)
     .abortSignal(AbortSignal.timeout(20000)),
   client
