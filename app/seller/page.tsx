@@ -28,15 +28,18 @@ export default async function SellerPage({
     <>
       <section className="page-intro seller-intro">
         <div className="container">
-          <p className="eyebrow">INDEPENDENT SHOP. SHARED POSSIBILITIES.</p>
+          <p className="eyebrow">SELL WITHOUT A DASHBOARD</p>
           <h1>
-            Your store.
+            If you can send
             <br />
-            <em>A whole new audience.</em>
+            a voice note,
+            <br />
+            <em>you can sell online.</em>
           </h1>
           <p>
-            Bring your products to Munshi Mart. Start with a WhatsApp message —
-            no complicated forms to fill.
+            No app to install, no listing fee and no forms. Message Munshi on
+            WhatsApp in Urdu, Roman Urdu or English, and your store goes live
+            with its own shareable page.
           </p>
           <a
             href={SELL_URL}
@@ -44,7 +47,7 @@ export default async function SellerPage({
             rel="noreferrer"
             className="btn btn-yellow"
           >
-            Let’s open your store <Icon name="arrow" />
+            Open your store on WhatsApp <Icon name="arrow" />
           </a>
         </div>
       </section>
@@ -52,7 +55,7 @@ export default async function SellerPage({
         <div className="section-heading">
           <div>
             <p className="eyebrow">AS SIMPLE AS A CONVERSATION</p>
-            <h2>From your phone to the marketplace.</h2>
+            <h2>From a voice note to a storefront.</h2>
           </div>
         </div>
         <div className="seller-steps">
@@ -60,17 +63,17 @@ export default async function SellerPage({
             [
               "01",
               "Tell us what you sell",
-              "Send a text or voice note to Munshi. Share a name, price, quantity and description.",
+              "Speak or type in the language you are comfortable with. Munshi understands Urdu, Roman Urdu and English.",
             ],
             [
               "02",
               "Show the good stuff",
-              "Add your product photos and store name. Review the details before publishing.",
+              "Send your photos. Munshi checks each one actually matches the product, and asks before using anything it is unsure about.",
             ],
             [
               "03",
               "Make yourself discoverable",
-              "Confirm your listing. Your active products appear in the marketplace and your own shareable store.",
+              "Confirm, and your listing joins the marketplace. Buyers message you directly on the number you already use.",
             ],
           ].map(([number, title, text]) => (
             <article key={number}>

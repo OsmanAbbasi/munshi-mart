@@ -3,12 +3,15 @@ import {
   categoryOptions,
   filterProducts,
   firstParam,
+  paginate,
   SORT_OPTIONS,
   type Product,
   type SearchParams,
 } from "../../lib/catalog-model";
+import { FAMILIES, familyFromSlug, familyCounts, presentSubcategories } from "../../lib/taxonomy";
 import ProductGrid from "../components/ProductGrid";
-import CategoryBar from "../components/CategoryBar";
+import TaxonomyFilters from "../components/TaxonomyFilters";
+import Pagination from "../components/Pagination";
 import CatalogError from "../components/CatalogError";
 import Icon from "../components/Icon";
 
@@ -36,8 +39,26 @@ export default function ProductsContent({
         : SORT_OPTIONS.some((s) => s.value === rawSort)
           ? rawSort
           : "newest";
-  const filtered = filterProducts(products, { search, category, sort });
+  const family = firstParam(params.family);
+  const sub = firstParam(params.sub);
+  const activeFamily = family ? familyFromSlug(family) : null;
+  const filtered = filterProducts(products, {
+    search,
+    category,
+    sort,
+    ...(activeFamily ? { family: activeFamily.slug } : {}),
+    ...(sub ? { sub } : {}),
+  });
   const categories = categoryOptions(products);
+  // Counts come from the whole store/marketplace list so a chip still shows
+  // how much it holds while another filter is active.
+  const counts = familyCounts(products);
+  const stockedFamilies = FAMILIES.filter((f) => (counts.get(f.slug) || 0) > 0);
+  const subcategories = activeFamily
+    ? presentSubcategories(products, activeFamily.slug)
+    : [];
+  // Server-side paging: the full catalogue is multiple megabytes of markup.
+  const pageData = paginate(filtered, params);
   // Native GET form keeps the complete view shareable and works before hydration.
   return (
     <section className="catalog-section container">
@@ -58,9 +79,9 @@ export default function ProductsContent({
           />
         </div>
         <label className="filter-label">
-          Category
+          Seller label
           <select name="category" defaultValue={category} key={category}>
-            <option value="">All products</option>
+            <option value="">Any</option>
             {[...new Set([...categories, ...(category ? [category] : [])])].map(
               (c) => (
                 <option key={c}>{c}</option>
@@ -78,14 +99,21 @@ export default function ProductsContent({
             ))}
           </select>
         </label>
+        {activeFamily && (
+          <input type="hidden" name="family" value={activeFamily.slug} />
+        )}
+        {sub && <input type="hidden" name="sub" value={sub} />}
         <button className="btn btn-primary" type="submit">
           Apply <Icon name="arrow" size={16} />
         </button>
       </form>
-      <CategoryBar
-        categories={categories}
-        selected={category}
+      <TaxonomyFilters
         basePath={basePath}
+        families={stockedFamilies}
+        counts={counts}
+        activeFamily={activeFamily}
+        subcategories={subcategories}
+        activeSub={sub}
         search={search}
         sort={sort}
       />
@@ -93,9 +121,9 @@ export default function ProductsContent({
         <p role="status">
           {error
             ? "Catalog temporarily unavailable"
-            : `${filtered.length} ${filtered.length === 1 ? "product" : "products"}${search ? ` for “${search}”` : ""}${category ? ` in ${category}` : ""}`}
+            : `${pageData.total === 0 ? "No" : pageData.total} ${pageData.total === 1 ? "product" : "products"}${search ? ` for “${search}”` : ""}${sub ? ` in ${sub}` : activeFamily ? ` in ${activeFamily.name}` : category ? ` in ${category}` : ""}${pageData.pageCount > 1 ? ` · showing ${pageData.from}–${pageData.to}` : ""}`}
         </p>
-        {(search || category || sort !== "newest") && (
+        {(search || category || family || sub || sort !== "newest") && (
           <Link href={basePath}>Clear filters ×</Link>
         )}
       </div>
@@ -103,10 +131,10 @@ export default function ProductsContent({
         <CatalogError message={error} retryHref={basePath} />
       ) : (
         <ProductGrid
-          products={filtered}
+          products={pageData.items}
           resetHref={basePath}
           emptyMessage={
-            search || category
+            search || category || family || sub
               ? "No matches this time. Try another search or clear your filters."
               : store
                 ? "This store has no active listings yet. Come back soon or explore the marketplace."
@@ -114,6 +142,7 @@ export default function ProductsContent({
           }
         />
       )}
+      {!error && <Pagination page={pageData} basePath={basePath} params={params} />}
     </section>
   );
 }

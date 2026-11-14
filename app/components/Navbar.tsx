@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCart } from "../context/CartContext";
 import SearchBar from "./SearchBar";
 import Icon from "./Icon";
+import ThemeToggle from "./ThemeToggle";
 export default function Navbar() {
   const { totalItems, toggleCart, wishlistCount } = useCart();
   const pathname = usePathname();
@@ -41,6 +42,7 @@ export default function Navbar() {
             <SearchBar key={pathname} />
           </div>
           <div className="header-actions">
+            <ThemeToggle />
             <Link
               href="/wishlist"
               className="wishlist-toggle"
@@ -91,6 +93,14 @@ export default function Navbar() {
                 The marketplace
               </Link>
               <Link
+                href="/stores"
+                aria-current={
+                  pathname.startsWith("/stores") ? "page" : undefined
+                }
+              >
+                Browse stores
+              </Link>
+              <Link
                 href="/seller"
                 aria-current={
                   pathname.startsWith("/seller") ? "page" : undefined
@@ -112,6 +122,7 @@ export default function Navbar() {
               {[
                 ["/", "Home"],
                 ["/products", "The marketplace"],
+                ["/stores", "Browse stores"],
                 ["/seller", "Sell with us"],
                 ["/cart", "Your cart"],
                 ["/wishlist", "Your wishlist"],

@@ -26,6 +26,23 @@ function client() {
   });
 }
 
+// Some legacy rows stored a WhatsApp internal media reference instead of an
+// uploaded public URL. Those hosts never serve the image to a browser, so a
+// card would show a broken frame; treat them as "no image" and let the normal
+// missing-image state show. This hides nothing real: the bytes are not public.
+const UNSERVABLE_IMAGE_HOSTS = [
+  "web.whatsapp.com",
+  "mmg.whatsapp.net",
+  "media.whatsapp.net",
+];
+function isUnservableImage(url: string): boolean {
+  try {
+    return UNSERVABLE_IMAGE_HOSTS.includes(new URL(url).hostname.toLowerCase());
+  } catch {
+    return true;
+  }
+}
+
 type Row = Record<string, unknown>;
 function sellerFromRow(row: Row | null): Seller | null {
   if (!row || typeof row.id !== "string" || !isPublicId(row.id)) return null;
@@ -68,7 +85,7 @@ function productFromRow(row: Row): Product {
           (url): url is string =>
             typeof url === "string" &&
             ((fixtureMode() && url.startsWith("/fixtures/")) ||
-              /^https:\/\//i.test(url)),
+              (/^https:\/\//i.test(url) && !isUnservableImage(url))),
         )
       : [],
     created_at: typeof row.created_at === "string" ? row.created_at : "",

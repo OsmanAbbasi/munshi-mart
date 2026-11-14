@@ -1,5 +1,7 @@
 # Munshi Mart — final local frontend verification
 
+Historical verification report, retained as evidence of that stage. See [current README](README.md) and [architecture](docs/ARCHITECTURE.md) for today's contract. [SELLER-CONTACT-UPDATE.md](SELLER-CONTACT-UPDATE.md) supersedes any unresolved-contact blocker below. This report's local results and deployment statements are not a fresh production audit.
+
 7 November 2026. Reviewed `FRONTEND-REPORT.md` (passes 1–2), `SHOPPING-REPORT.md` (pass 3), and the current implementation. Verification is local; nothing was deployed. All changes are inside the storefront.
 
 ## Reproduced defects and fixes

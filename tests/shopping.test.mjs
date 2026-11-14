@@ -4,8 +4,13 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 const url = (source) =>
   `data:text/javascript;base64,${Buffer.from(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText).toString("base64")}`;
+const taxonomyUrl = url(
+  await readFile(new URL("../lib/taxonomy.ts", import.meta.url), "utf8"),
+);
 const modelUrl = url(
-  await readFile(new URL("../lib/catalog-model.ts", import.meta.url), "utf8"),
+  (
+    await readFile(new URL("../lib/catalog-model.ts", import.meta.url), "utf8")
+  ).replace(/["']\.\/taxonomy["']/, JSON.stringify(taxonomyUrl)),
 );
 const model = await import(modelUrl);
 const catalogSource = (await readFile(new URL("../lib/catalog.ts", import.meta.url), "utf8"))

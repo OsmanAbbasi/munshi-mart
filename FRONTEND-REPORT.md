@@ -1,5 +1,7 @@
 # Munshi Mart — frontend passes 1 and 2
 
+Historical report for frontend passes 1 and 2. Current entry points: [README](README.md) and [architecture](docs/ARCHITECTURE.md). The missing public-contact approval described below was superseded by [SELLER-CONTACT-UPDATE.md](SELLER-CONTACT-UPDATE.md); current code uses approved `sellers.contact_number`. Test counts and deployment statements below apply to this original stage.
+
 Completed locally on 7 November 2026. All edits are inside `munshi-storefront`. No deployment was performed.
 
 ## Delivered

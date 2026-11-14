@@ -12,8 +12,13 @@ const compile = (source) =>
   }).outputText;
 const moduleUrl = (source) =>
   `data:text/javascript;base64,${Buffer.from(compile(source)).toString("base64")}`;
+const taxonomyUrl = moduleUrl(
+  await readFile(new URL("../lib/taxonomy.ts", import.meta.url), "utf8"),
+);
 const modelUrl = moduleUrl(
-  await readFile(new URL("../lib/catalog-model.ts", import.meta.url), "utf8"),
+  (
+    await readFile(new URL("../lib/catalog-model.ts", import.meta.url), "utf8")
+  ).replace(/["']\.\/taxonomy["']/, JSON.stringify(taxonomyUrl)),
 );
 const source = (
   await readFile(new URL("../lib/catalog.ts", import.meta.url), "utf8")

@@ -1,5 +1,7 @@
 # Munshi Mart — device-local shopping and seller handoff
 
+Historical shopping-pass report. Current entry points: [README](README.md) and [architecture](docs/ARCHITECTURE.md). The public-contact blocker below was superseded by the owner's [seller-contact approval](SELLER-CONTACT-UPDATE.md). Earlier test counts, unchanged-file claims and pending-deployment statements refer to this pass, not all subsequent work.
+
 Completed inside `munshi-storefront`; the bot, Supabase schema/RLS/storage, dependency manifests and deployment configuration are unchanged.
 
 ## Behavior delivered

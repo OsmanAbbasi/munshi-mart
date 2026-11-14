@@ -929,17 +929,32 @@ try {
         await screenshot(`live-${label}-${name}`);
       }
     }
-    await visit(`/products?category=${encodeURIComponent(product.category)}`);
+    // The marketplace is paginated, so a filtered view can span several pages.
+    // Walk them until the reference product is found rather than assuming it
+    // is on page one.
+    const findAcrossPages = async (path, wanted = product.id) => {
+      for (let page = 1; page <= 40; page++) {
+        await visit(`${path}${page > 1 ? `&page=${page}` : ""}`);
+        if ((await ids()).includes(wanted)) return true;
+        const hasNext = await evaluate(
+          `!!document.querySelector('.pagination a[rel="next"]')`,
+        );
+        if (!hasNext) return false;
+      }
+      return false;
+    };
     check(
       "live reference product appears in marketplace category",
-      (await ids()).includes(product.id),
+      await findAcrossPages(
+        `/products?category=${encodeURIComponent(product.category)}`,
+      ),
+    );
+    check(
+      "live reference product appears in correct store",
+      await findAcrossPages(`/seller/${sellerA}?from=qa`),
     );
     await visit(`/seller/${sellerA}`);
     const a = await ids();
-    check(
-      "live reference product appears in correct store",
-      a.includes(product.id),
-    );
     check(
       "live store A cards link only to store A",
       await evaluate(
@@ -959,13 +974,12 @@ try {
       ),
     );
     const search = product.product_name.split(/\s+/)[0];
-    await visit(
-      `/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(product.category)}&sort=price-asc`,
-    );
+    const combined = `/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(product.category)}&sort=price-asc`;
     check(
       "live combined search/category finds reference product",
-      (await ids()).includes(product.id),
+      await findAcrossPages(combined),
     );
+    await visit(combined);
     check(
       "live price sort is numeric ascending",
       await evaluate(

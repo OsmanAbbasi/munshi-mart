@@ -6,23 +6,44 @@ import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 import WhatsAppButton from "./components/WhatsAppButton";
 import { fixtureMode } from "../lib/catalog";
-import { WHATSAPP_NUMBER } from "../lib/brand";
+import { WHATSAPP_NUMBER, SITE_URL } from "../lib/brand";
+import { themeScript } from "./components/ThemeToggle";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Munshi Mart — Good finds. Local stores.",
+    default: "Munshi Mart — Pakistan's WhatsApp-native marketplace",
     template: "%s | Munshi Mart",
   },
   description:
-    "Discover products from independent Pakistani stores. Browse the marketplace or start selling through WhatsApp.",
+    "Shop independent Pakistani stores, browse by category or store, and talk to sellers on WhatsApp. Listings are created by voice or text through Munshi, the WhatsApp assistant for sellers.",
+  applicationName: "Munshi Mart",
+  keywords: [
+    "Pakistan marketplace",
+    "online shopping Pakistan",
+    "WhatsApp shopping",
+    "independent stores Pakistan",
+    "RC hobby Pakistan",
+    "gaming PC Pakistan",
+  ],
   icons: { icon: "/brand-mark.svg" },
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Munshi Mart",
-    description: "Good finds. Local stores.",
+    title: "Munshi Mart — Pakistan's WhatsApp-native marketplace",
+    description:
+      "Independent Pakistani stores in one marketplace. Browse by category or store and message sellers directly on WhatsApp.",
+    url: SITE_URL,
+    siteName: "Munshi Mart",
     locale: "en_PK",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Munshi Mart",
+    description: "Good finds. Local stores. Powered by WhatsApp.",
+  },
+  robots: { index: true, follow: true },
 };
 export default function RootLayout({
   children,
@@ -30,7 +51,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Applies the saved/system theme before first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <a href="#main-content" className="skip-link">
           Skip to content
